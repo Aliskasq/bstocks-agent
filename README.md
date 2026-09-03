@@ -116,6 +116,8 @@ Auth is **OAuth 2.1 + PKCE with Client ID Metadata Documents** — there is no A
 for this endpoint. We discovered the full flow from the server's own metadata; it is
 documented reproducibly in [`docs/AGENT_OS_AUTH.md`](docs/AGENT_OS_AUTH.md).
 
+Step-by-step VPS setup (Russian): [`docs/INSTALL-ru.md`](docs/INSTALL-ru.md).
+
 Security properties worth noting:
 - No client secret, no static key. `client_id` is a public URL to a metadata document.
 - The human grants scopes interactively once; this cannot be automated away.
@@ -244,7 +246,8 @@ app/
 ├── trace.py     decision trace recorder
 └── cli_auth.py  OAuth helper CLI
 frontend/        single-page dashboard
-docs/            AGENT_OS_AUTH.md
+docs/            AGENT_OS_AUTH.md · DEPLOY.md · INSTALL-ru.md
+                 DEMO_SCRIPT.md
 traces/          recorded decision traces
 ```
 
