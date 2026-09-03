@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bStocks AI Agent</title>
+<style>
+:root{
+  --bg:#0b0e13; --panel:#141921; --panel2:#1b2230; --line:#242c3a;
+  --text:#e6edf3; --dim:#8b96a5; --green:#3fb950; --amber:#d29922;
+  --red:#f85149; --blue:#58a6ff; --purple:#bc8cff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+header{display:flex;align-items:center;gap:12px;padding:14px 18px;
+  border-bottom:1px solid var(--line);background:var(--panel);
+  position:sticky;top:0;z-index:10;flex-wrap:wrap}
+h1{font-size:15px;margin:0;letter-spacing:.3px}
+.badge{font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--line)}
+.on{color:var(--green);border-color:#1d3a24;background:#0d1f13}
+.off{color:var(--dim)}
+.warn{color:var(--amber);border-color:#3a2f0d;background:#1f1a0d}
+main{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px;
+  max-width:1400px;margin:0 auto}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  overflow:hidden}
+.card h2{font-size:11px;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--dim);margin:0;padding:11px 14px;border-bottom:1px solid var(--line);
+  background:var(--panel2)}
+.card .body{padding:14px}
+.full{grid-column:1/-1}
+button{font:inherit;background:var(--panel2);color:var(--text);
+  border:1px solid var(--line);border-radius:7px;padding:7px 14px;cursor:pointer}
+button:hover{border-color:var(--blue);color:var(--blue)}
+button.primary{background:#132e1c;border-color:#1d3a24;color:var(--green)}
+button.danger{background:#2d1315;border-color:#4a1f22;color:var(--red)}
+button:disabled{opacity:.4;cursor:not-allowed}
+input{font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);
+  border-radius:7px;padding:7px 10px;flex:1;min-width:260px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);font-size:13px}
+th{color:var(--dim);font-weight:400;font-size:11px;text-transform:uppercase}
+.score{font-weight:700}
+.STRONG{color:var(--green)} .WATCH{color:var(--amber)}
+.WEAK{color:var(--dim)} .AVOID{color:var(--red)}
+.decision{font-size:26px;font-weight:700;letter-spacing:.5px}
+.BUY{color:var(--green)} .WAIT{color:var(--amber)}
+.dim{color:var(--dim)}
+.reason{color:#c9d4e0;font-size:13px;margin-top:8px;line-height:1.6}
+.log{height:270px;overflow-y:auto;font-size:12px;padding:0}
+.log div{padding:5px 14px;border-bottom:1px solid #1a212c;display:flex;gap:9px}
+.log .t{color:var(--dim);flex-shrink:0}
+.rej{background:#2d1315;border:1px solid #4a1f22;color:var(--red);
+  padding:10px 12px;border-radius:7px;margin-top:10px;font-weight:600}
+.appr{background:#132e1c;border:1px solid #1d3a24;color:var(--green);
+  padding:10px 12px;border-radius:7px;margin-top:10px}
+.kv{display:flex;justify-content:space-between;padding:5px 0;
+  border-bottom:1px solid #1a212c;font-size:13px}
+.chk{display:flex;gap:8px;padding:4px 0;font-size:12px}
+.chk .ok{color:var(--green)} .chk .no{color:var(--red)}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:11px;
+  overflow-x:auto;font-size:11px;max-height:340px;color:#a8b3c1;margin:0}
+.tools{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tool{font-size:11px;background:#152030;border:1px solid #1f3350;color:var(--blue);
+  padding:3px 8px;border-radius:5px}
+.mem{font-size:12px;color:var(--purple);margin-top:8px}
+select{font:inherit;background:var(--bg);color:var(--text);
+  border:1px solid var(--line);border-radius:7px;padding:6px 9px}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>bStocks AI Agent</h1>
+  <span id="st" class="badge off">connecting</span>
+  <span id="src" class="badge"></span>
+  <span id="auth" class="badge"></span>
+  <span style="flex:1"></span>
+  <span id="cyc" class="badge">cycles 0</span>
+</header>
+
+<main>
+  <div class="card full">
+    <h2>Goal</h2>
+    <div class="body" style="display:flex;gap:9px;flex-wrap:wrap">
+      <input id="goal" value="Find the best bStocks opportunity with moderate risk. Do not trade unless the setup meets all risk criteria.">
+      <button class="primary" id="start">Start agent</button>
+      <button class="danger" id="stop">Stop</button>
+      <button id="once">Run one cycle</button>
+    </div>
+  </div>
+
+  <div class="card full">
+    <h2>Model <span class="dim">(free + tool-calling only, so demos cost nothing)</span></h2>
+    <div class="body" style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+      <select id="msel" style="min-width:340px"><option value="">loading…</option></select>
+      <button class="primary" id="mset">Use this model</button>
+      <button id="mreload">Refresh list</button>
+      <label class="dim" style="display:flex;gap:5px;align-items:center">
+        <input type="checkbox" id="mfree" checked> free only
+      </label>
+      <span id="mnow" class="badge">—</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Top opportunities <span class="dim">(deterministic pre-filter)</span></h2>
+    <div class="body" style="padding:0">
+      <table><thead><tr><th>Symbol</th><th>Score</th><th>Label</th></tr></thead>
+      <tbody id="cands"><tr><td colspan="3" class="dim" style="padding:14px">
+        no scan yet</td></tr></tbody></table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Risk manager <span class="dim">(outside the LLM)</span></h2>
+    <div class="body" id="risk"><span class="dim">loading…</span></div>
+  </div>
+
+  <div class="card full">
+    <h2>Current decision</h2>
+    <div class="body" id="dec"><span class="dim">Agent has not decided yet.</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Monitoring <span class="dim">(patience made observable)</span></h2>
+    <div class="body" id="watch"><span class="dim">no active watches</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Agent activity</h2>
+    <div class="body log" id="log"></div>
+  </div>
+
+  <div class="card full">
+    <h2>Decision trace <span class="dim">(proof, not claims)</span></h2>
+    <div class="body">
+      <select id="tsel"><option value="">— select a trace —</option></select>
+      <button id="treload">Reload list</button>
+      <pre id="tbody" style="margin-top:11px">Pick a trace to inspect every tool call the agent made.</pre>
+    </div>
+  </div>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const fmt = t => new Date(t*1000).toLocaleTimeString();
+
+function logline(t, msg, color){
+  const d = document.createElement('div');
+  d.innerHTML = `<span class="t">${fmt(t)}</span><span style="color:${color||'inherit'}">${msg}</span>`;
+  $('#log').prepend(d);
+  while($('#log').children.length > 200) $('#log').lastChild.remove();
+}
+
+function renderCands(list){
+  if(!list || !list.length) return;
+  $('#cands').innerHTML = list.map(c =>
+    `<tr><td>${c.symbol}</td><td class="score ${c.label}">${c.score}</td>
+     <td class="${c.label}">${c.label}</td></tr>`).join('');
+}
+
+function renderDecision(d, risk){
+  if(!d){ return; }
+  let h = `<div class="decision ${d.decision}">${d.symbol||''} → ${d.decision||''}</div>`;
+  h += `<div class="dim" style="margin-top:5px">confidence ${d.confidence ?? '—'}`;
+  if(d.monitor_condition) h += ` · watching for <b>${d.monitor_condition}</b>`;
+  h += `</div>`;
+  if(d.reason) h += `<div class="reason">${d.reason}</div>`;
+  if(d.memory_used && d.memory_used.length)
+    h += `<div class="mem">memory recalled:<br>· ${d.memory_used.join('<br>· ')}</div>`;
+  if(risk){
+    if(risk.approved){
+      h += `<div class="appr">RISK APPROVED — $${risk.approved_size_usd} · ${risk.reason}</div>`;
+      h += `<button class="primary" style="margin-top:10px" onclick="confirmTrade()">Confirm &amp; execute</button>`;
+    } else {
+      h += `<div class="rej">REJECTED BY RISK MANAGER<br>
+        <span style="font-weight:400">${risk.reason}</span></div>`;
+    }
+    h += `<div style="margin-top:9px">` + (risk.checks||[]).map(c =>
+      `<div class="chk"><span class="${c.ok?'ok':'no'}">${c.ok?'PASS':'FAIL'}</span>
+       <span class="dim">${c.check}</span><span>${c.detail}</span></div>`).join('') + `</div>`;
+  }
+  if(d.final_action) h += `<div class="dim" style="margin-top:9px">final action: <b>${d.final_action}</b></div>`;
+  $('#dec').innerHTML = h;
+}
+
+function renderRisk(s){
+  const L = s.risk_limits||{}, R = s.risk_state||{};
+  $('#risk').innerHTML = `
+    <div class="kv"><span class="dim">max position</span><span>$${L.max_position_usd}</span></div>
+    <div class="kv"><span class="dim">daily loss limit</span><span>$${L.max_daily_loss_usd}</span></div>
+    <div class="kv"><span class="dim">max trades / day</span><span>${R.trades_today||0} / ${L.max_trades_per_day}</span></div>
+    <div class="kv"><span class="dim">max leverage</span><span>${L.max_leverage}x</span></div>
+    <div class="kv"><span class="dim">realized P&amp;L today</span><span>$${(R.realized_pnl_today||0).toFixed(2)}</span></div>`;
+}
+
+function renderWatch(ws){
+  if(!ws || !ws.length){ $('#watch').innerHTML = '<span class="dim">no active watches</span>'; return; }
+  $('#watch').innerHTML = ws.map(w => `
+    <div class="kv"><span>${w.symbol}</span><span class="${w.triggered?'STRONG':'WATCH'}">
+      ${w.triggered?'TRIGGERED':'waiting'}</span></div>
+    <div class="dim" style="font-size:12px;padding:4px 0 10px">
+      condition <b>${w.condition}</b> · ref $${w.reference_price} · ${w.checks} checks
+      ${w.trigger_detail?'<br>'+w.trigger_detail:''}</div>`).join('');
+}
+
+async function refresh(){
+  const s = await (await fetch('/api/state')).json();
+  $('#st').textContent = s.running ? (s.status||'running') : 'idle';
+  $('#st').className = 'badge ' + (s.running?'on':'off');
+  $('#cyc').textContent = 'cycles ' + s.cycles;
+  $('#src').textContent = s.data_source === 'mock' ? 'MOCK DATA' : 'live MCP';
+  $('#src').className = 'badge ' + (s.data_source==='mock'?'warn':'on');
+  $('#auth').textContent = s.authenticated ? 'Agent OS authorized' : 'not authorized';
+  $('#auth').className = 'badge ' + (s.authenticated?'on':'warn');
+  if(s.model){ $('#mnow').textContent = s.model; }
+  renderRisk(s); renderWatch(s.watches);
+  if(s.last_decision) renderDecision(s.last_decision, null);
+}
+
+async function loadModels(refreshList){
+  const free = $('#mfree').checked ? 'true' : 'false';
+  const q = `/api/models?free_only=${free}&tools_only=true&refresh=${refreshList?'true':'false'}`;
+  const r = await (await fetch(q)).json();
+  if(r.error){
+    $('#msel').innerHTML = `<option value="">error: ${r.error}</option>`;
+    return;
+  }
+  $('#msel').innerHTML = r.models.map(m => {
+    const ctx = m.context_length ? ` · ${Math.round(m.context_length/1000)}k ctx` : '';
+    const sel = m.id === r.active ? ' selected' : '';
+    return `<option value="${m.id}"${sel}>${m.id}${ctx}</option>`;
+  }).join('') || '<option value="">no models matched</option>';
+  $('#mnow').textContent = r.active;
+}
+
+$('#mset').onclick = async () => {
+  const model = $('#msel').value;
+  if(!model) return;
+  $('#mset').disabled = true;
+  const r = await (await fetch('/api/model', {method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({model})})).json();
+  $('#mset').disabled = false;
+  if(r.ok){ $('#mnow').textContent = r.active;
+    logline(Date.now()/1000, 'model switched to '+r.active, '#3fb950'); }
+  else { logline(Date.now()/1000, 'model switch failed: '+r.error, '#f85149'); }
+};
+$('#mreload').onclick = () => loadModels(true);
+$('#mfree').onchange = () => loadModels(false);
+
+async function loadTraces(){
+  const r = await (await fetch('/api/traces')).json();
+  $('#tsel').innerHTML = '<option value="">— select a trace —</option>' +
+    r.traces.map(t=>`<option value="${t}">${t}</option>`).join('');
+}
+
+$('#tsel').onchange = async e => {
+  if(!e.target.value) return;
+  const t = await (await fetch('/api/traces/'+e.target.value)).json();
+  $('#tbody').textContent = JSON.stringify(t, null, 2);
+};
+$('#treload').onclick = loadTraces;
+
+$('#start').onclick = async () => {
+  await fetch('/api/start', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({goal: $('#goal').value})});
+  refresh();
+};
+$('#stop').onclick = async () => { await fetch('/api/stop',{method:'POST'}); refresh(); };
+$('#once').onclick = async () => {
+  $('#once').disabled = true; $('#once').textContent = 'thinking…';
+  const r = await (await fetch('/api/cycle',{method:'POST'})).json();
+  renderDecision(r.decision, r.risk); loadTraces(); refresh();
+  $('#once').disabled = false; $('#once').textContent = 'Run one cycle';
+};
+async function confirmTrade(){
+  const r = await (await fetch('/api/confirm',{method:'POST'})).json();
+  logline(Date.now()/1000, 'EXECUTION: '+JSON.stringify(r), '#3fb950');
+  refresh();
+}
+
+const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+const sock = new WebSocket(`${proto}://${location.host}/ws`);
+sock.onmessage = ev => {
+  const e = JSON.parse(ev.data);
+  if(e.kind === 'status'){ logline(e.ts, e.status, '#8b96a5'); refresh(); }
+  else if(e.kind === 'watch_check')
+    logline(e.ts, `${e.symbol} $${e.price} (ref $${e.reference_price}) rsi ${e.rsi}`, '#8b96a5');
+  else if(e.kind === 'condition_triggered'){
+    logline(e.ts, `TRIGGERED ${e.symbol} ${e.condition} — ${e.detail}`, '#d29922'); refresh();
+  }
+  else if(e.kind === 'decision'){
+    logline(e.ts, `decision #${e.cycle}${e.reanalysis?' (re-analysis)':''}: `+
+      `${e.decision?.symbol} → ${e.decision?.decision}`, '#58a6ff');
+    renderCands(e.candidates); renderDecision(e.decision, e.risk); loadTraces(); refresh();
+  }
+  else if(e.kind === 'tool_call') logline(e.ts||Date.now()/1000, `→ ${e.tool}`, '#58a6ff');
+  else if(e.kind === 'error') logline(e.ts, 'ERROR '+e.error, '#f85149');
+};
+sock.onclose = () => { $('#st').textContent='disconnected'; $('#st').className='badge off'; };
+
+refresh(); loadTraces(); loadModels(false); setInterval(refresh, 5000);
+</script>
+</body>
+</html>

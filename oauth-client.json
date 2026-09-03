@@ -1,0 +1,17 @@
+{
+  "client_id": "https://aliskasq.github.io/bstocks-agent/oauth-client.json",
+  "client_name": "bStocks AI Agent",
+  "client_uri": "https://github.com/Aliskasq/bstocks-agent",
+  "redirect_uris": [
+    "http://127.0.0.1:8765/callback"
+  ],
+  "grant_types": [
+    "authorization_code",
+    "refresh_token"
+  ],
+  "response_types": [
+    "code"
+  ],
+  "token_endpoint_auth_method": "none",
+  "application_type": "native"
+}
