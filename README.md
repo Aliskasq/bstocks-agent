@@ -255,6 +255,65 @@ No numpy, no PostgreSQL, no Docker — four dependencies total, installs in seco
 
 ---
 
+## Install as a Claude Code Custom Agent
+
+**Quick install (one command):**
+
+```bash
+# From any directory, install the agent into your ~/.claude/agents/
+git clone https://github.com/Aliskasq/bstocks-agent.git ~/.claude/agents/bstocks-source
+ln -sf ~/.claude/agents/bstocks-source/.claude/agents/bstocks.md ~/.claude/agents/bstocks.md
+```
+
+Or manually:
+
+```bash
+git clone https://github.com/Aliskasq/bstocks-agent.git
+cp bstocks-agent/.claude/agents/bstocks.md ~/.claude/agents/
+```
+
+**Then in any project, just ask Claude Code:**
+
+> "Use the bstocks agent to scan for bStocks opportunities"
+
+Claude Code will invoke the `bstocks` CLI via the `bash` tool. The agent definition (`.claude/agents/bstocks.md`) tells it how to use the CLI.
+
+### Prerequisites (run once in the cloned repo)
+
+```bash
+cd ~/.claude/agents/bstocks-source
+pip install -r requirements.txt
+cp .env.example .env
+# Add OPENROUTER_API_KEY to .env
+# Run OAuth flow once:
+python3 -m app.cli_auth login-manual
+```
+
+### Available commands (via the agent)
+
+| Command | What it does |
+|---------|--------------|
+| `bstocks scan` | Rank universe by signal score |
+| `bstocks cycle` | Full decision: scan → LLM → risk gate |
+| `bstocks watch` | Check active wait conditions |
+| `bstocks risk` | Show limits + today's usage |
+| `bstocks memory SYMBOL` | Recall similar past setups |
+| `bstocks state` | Show watches, last decision, pending trade |
+| `bstocks confirm` | Execute pending trade (after risk re-check) |
+
+### Free models on OpenRouter
+
+Set `OPENROUTER_MODEL` in `.env` to any free model:
+
+```
+minimax/minimax-01
+nvidia/nemotron-3-ultra-550b-a55b:free
+nvidia/nemotron-3.5-lightning:free
+nvidia/nemotron-3-super-120b-a12b:free
+```
+
+---
+
 ## Safety
 
 - Risk limits are enforced in Python, never by the model.

@@ -28,7 +28,7 @@ def _num(name: str, default: float) -> float:
 
 
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
-OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "anthropic/claude-opus-5")
+OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "minimax/minimax-m3:free")
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 BINANCE_MCP_URL = os.environ.get("BINANCE_MCP_URL", "https://agent.binance.com/mcp/agentic")
